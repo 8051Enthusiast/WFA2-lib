@@ -197,10 +197,10 @@ void* mm_stack_allocate(
   mm_stack_segment_t* const segment = mm_stack_fetch_segment(mm_stack,num_bytes_allocated);
 #endif
   // Allocate memory
-  void* memory_base ;
+  char* memory_base ;
   if (segment != NULL) {
     // Segment-memory
-    memory_base = segment->memory + segment->used;
+    memory_base = (char*)segment->memory + segment->used;
     if (zero_mem) memset(memory_base,0,num_bytes_allocated); // Set zero
     segment->used += num_bytes_allocated; // Update segment
   } else {
@@ -208,12 +208,12 @@ void* mm_stack_allocate(
     memory_base = malloc(num_bytes_allocated);
     if (zero_mem) memset(memory_base,0,num_bytes_allocated); // Set zero
     // Add malloc-request
-    vector_insert(mm_stack->malloc_requests,memory_base,void*);
+    vector_insert(mm_stack->malloc_requests,(void*)memory_base,void*);
   }
   // Check alignment
   if (align_bytes == 0) return memory_base;
   // Align memory request
-  void* memory_aligned = memory_base + align_bytes;
+  char* memory_aligned = memory_base + align_bytes;
   memory_aligned = memory_aligned - ((uintptr_t)memory_aligned % align_bytes);
   return memory_aligned;
 }

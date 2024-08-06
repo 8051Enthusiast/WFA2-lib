@@ -64,7 +64,7 @@
   #define PCIGAR_HALF_FULL_MASK           0x00010000u /*  9-slots busy or more */
   #define PCIGAR_IS_UTILISED(pcigar,mask) ((pcigar) >= mask)
   #define PCIGAR_EXTRACT(pcigar)          ((pcigar) >> 30)
-  #define PCIGAR_FREE_SLOTS(pcigar)       ((pcigar)!=0) ? __builtin_clz(pcigar)/2 : PCIGAR_MAX_LENGTH;
+  #define PCIGAR_FREE_SLOTS(pcigar)       ((pcigar)!=0) ? LZCNT_32(pcigar)/2 : PCIGAR_MAX_LENGTH;
 #else
   typedef uint64_t pcigar_t;
   #define PCIGAR_MAX_LENGTH               32
@@ -73,7 +73,7 @@
   #define PCIGAR_HALF_FULL_MASK           0x0000000100000000ul /* 17-slots busy or more */
   #define PCIGAR_IS_UTILISED(pcigar,mask) ((pcigar) >= mask)
   #define PCIGAR_EXTRACT(pcigar)          ((pcigar) >> 62)
-  #define PCIGAR_FREE_SLOTS(pcigar)       ((pcigar)!=0) ? __builtin_clzl(pcigar)/2 : PCIGAR_MAX_LENGTH;
+  #define PCIGAR_FREE_SLOTS(pcigar)       ((pcigar)!=0) ? LZCNT_64(pcigar)/2 : PCIGAR_MAX_LENGTH;
 #endif
 
 

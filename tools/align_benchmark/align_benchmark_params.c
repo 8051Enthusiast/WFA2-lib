@@ -28,6 +28,7 @@
  * AUTHOR(S): Santiago Marco-Sola <santiagomsola@gmail.com>
  */
 
+#include <getopt.h>
 #include "align_benchmark_params.h"
 
 /*

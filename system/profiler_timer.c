@@ -37,6 +37,9 @@
 #include <mach/clock.h>
 #include <mach/mach.h>
 #include <mach/mach_time.h>
+#elif _MSC_VER
+#include <windows.h>
+#include <sysinfoapi.h>
 #endif
 
 /*
@@ -51,6 +54,8 @@ void timer_get_system_time(struct timespec *ts) {
   mach_port_deallocate(mach_task_self(),cclock);
   ts->tv_sec = mts.tv_sec;
   ts->tv_nsec = mts.tv_nsec;
+#elif _MSC_VER
+  timespec_get(ts,TIME_UTC);
 #else
   clock_gettime(CLOCK_REALTIME,ts);
 #endif

@@ -50,7 +50,7 @@ FORCE_INLINE wf_offset_t wavefront_extend_matches_packed_kernel(
   uint64_t* text_blocks = (uint64_t*)(wf_aligner->sequences.text+WAVEFRONT_H(k,offset));
   // Compare 64-bits blocks
   uint64_t cmp = *pattern_blocks ^ *text_blocks;
-  while (__builtin_expect(cmp==0,0)) {
+  while (EXPECT(cmp==0,0)) {
     // Increment offset (full block)
     offset += 8;
     // Next blocks
@@ -60,7 +60,7 @@ FORCE_INLINE wf_offset_t wavefront_extend_matches_packed_kernel(
     cmp = *pattern_blocks ^ *text_blocks;
   }
   // Count equal characters
-  const int equal_right_bits = __builtin_ctzl(cmp);
+  const int equal_right_bits = TZCNT_64(cmp);
   const int equal_chars = DIV_FLOOR(equal_right_bits,8);
   offset += equal_chars;
   // Return extended offset
@@ -150,7 +150,7 @@ FORCE_NO_INLINE void wavefront_extend_matches_packed_end2end_avx2(
     if(mask == 0) continue;
     // ctz(0) is undefined
     while (mask != 0) {
-      int tz = __builtin_ctz(mask);
+      int tz = TZCNT_32(mask);
       int curr_k = k + (tz/4);
       const wf_offset_t offset = offsets[curr_k];
       // Extend offset

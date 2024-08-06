@@ -289,10 +289,10 @@ void* mm_allocator_allocate(
 #endif
   if (segment != NULL) {
     // Allocate memory
-    void* const memory_base = segment->memory + segment->used;
+    char* const memory_base = (char* const)segment->memory + segment->used;
     if (zero_mem) memset(memory_base,0,num_bytes_allocated); // Set zero
     // Compute aligned memory
-    void* memory_aligned = memory_base + sizeof(mm_allocator_reference_t) + align_bytes;
+    char* memory_aligned = memory_base + sizeof(mm_allocator_reference_t) + align_bytes;
     if (align_bytes > 0) {
       memory_aligned = memory_aligned - ((uintptr_t)memory_aligned % align_bytes);
     }
@@ -316,10 +316,10 @@ void* mm_allocator_allocate(
     return memory_aligned;
   } else {
     // Malloc memory
-    void* const memory_base = malloc(num_bytes_allocated);
+    char* const memory_base = malloc(num_bytes_allocated);
     if (zero_mem) memset(memory_base,0,num_bytes_allocated); // Set zero
     // Compute aligned memory
-    void* memory_aligned = memory_base + sizeof(mm_allocator_reference_t) + align_bytes;
+    char* memory_aligned = memory_base + sizeof(mm_allocator_reference_t) + align_bytes;
     if (align_bytes > 0) {
       memory_aligned = memory_aligned - ((uintptr_t)memory_aligned % align_bytes);
     }
@@ -424,7 +424,7 @@ void mm_allocator_free(
   free(memory);
 #else
   // Get reference
-  void* const effective_memory = memory - sizeof(mm_allocator_reference_t);
+  char* const effective_memory = (char* const)memory - sizeof(mm_allocator_reference_t);
   mm_allocator_reference_t* const mm_reference = (mm_allocator_reference_t*) effective_memory;
   if (mm_reference->segment_idx == UINT32_MAX) {
     // Free malloc memory

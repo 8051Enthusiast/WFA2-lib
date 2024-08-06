@@ -122,7 +122,7 @@ int pcigar_unpack_extend(
     cmp = pattern_block ^ text_block;
   }
   // Count equal characters
-  num_matches += __builtin_ctzl(cmp)/8;
+  num_matches += TZCNT_64(cmp)/8;
   *((uint64_t*)cigar_buffer) = CIGAR_8MATCHES_UINT64;
   // Return total matches
   return num_matches;

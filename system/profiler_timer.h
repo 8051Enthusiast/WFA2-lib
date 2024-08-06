@@ -33,7 +33,12 @@
 #ifndef PROFILER_TIMER_H
 #define PROFILER_TIMER_H
 
+#ifdef _MSC_VER
+#include <time.h>
+#else
 #include <sys/time.h>
+#endif
+
 #include "profiler_counter.h"
 
 /*

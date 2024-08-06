@@ -47,10 +47,12 @@ typedef uint32_t bt_block_idx_t; // Up to 2^31 references (~32GB of not-compacta
 #define BT_BLOCK_IDX_MAX   UINT32_MAX
 #define BT_BLOCK_IDX_NULL  UINT32_MAX
 
+#pragma pack(push,1)
 typedef struct {
   pcigar_t pcigar;            // Packed CIGAR
   bt_block_idx_t prev_idx;    // Index of the previous BT-block
-} __attribute__((packed)) bt_block_t;
+} bt_block_t;
+#pragma pack(pop)
 
 /*
  * Backtrace initial positions

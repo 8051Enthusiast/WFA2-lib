@@ -46,7 +46,7 @@
 
 const uint8_t sam_cigar_lut[256] =
 {
-  [0 ... 255] = SAM_CIGAR_NA,
+  ARRAY_REPEAT_256(SAM_CIGAR_NA),
   ['M'] = SAM_CIGAR_MATCH,
   ['I'] = SAM_CIGAR_INS,
   ['D'] = SAM_CIGAR_DEL,

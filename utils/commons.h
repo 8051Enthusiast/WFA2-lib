@@ -34,7 +34,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 
 #include <stdbool.h>
 #include <float.h>
@@ -44,21 +43,20 @@
 #include <string.h>
 #include <wchar.h>
 #include <time.h>
-#include <sys/time.h>
 
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
 #include <limits.h>
 
 #include <string.h>
 #include <math.h>
 #include <stdarg.h>
-#include <getopt.h>
 
-#include <errno.h>
 #include <assert.h>
-#include <signal.h>
+
+#ifdef _MSC_VER
+#include <windows.h>
+#include <winnt.h>
+#include <intrin.h>
+#endif
 
 /*
  * Macro Utils (Stringify)
@@ -242,8 +240,13 @@ uint64_t nominal_prop_u64(const uint64_t base,const double factor);
 /*
  * Inline
  */
+#ifdef _MSC_VER
+#define FORCE_INLINE __forceinline
+#define FORCE_NO_INLINE __declspec(noinline)
+#else
 #define FORCE_INLINE __attribute__((always_inline)) inline
 #define FORCE_NO_INLINE __attribute__ ((noinline))
+#endif
 
 /*
  * Vectorize
@@ -252,6 +255,8 @@ uint64_t nominal_prop_u64(const uint64_t base,const double factor);
   #define PRAGMA_LOOP_VECTORIZE _Pragma("clang loop vectorize(enable)")
 #elif defined(__GNUC__)
   #define PRAGMA_LOOP_VECTORIZE _Pragma("GCC ivdep")
+#elif _MSC_VER
+  #define PRAGMA_LOOP_VECTORIZE _Pragma("loop( ivdep )")
 #else
   #define PRAGMA_LOOP_VECTORIZE _Pragma("ivdep")
 #endif
@@ -259,13 +264,114 @@ uint64_t nominal_prop_u64(const uint64_t base,const double factor);
 /*
  * Popcount macros
  */
+#ifdef _MSC_VER
+// these are available in sse4, but msvc doesn't have a
+// flag for that, so avx is the best guess
+#ifdef __AVX__
+#define POPCOUNT_32(value) __popcnt(value)
+#define POPCOUNT_64(value) __popcnt64(value)
+#else
+FORCE_INLINE int POPCOUNT_64(uint64_t value) {
+  const uint64_t m01 = 0x5555555555555555;
+  const uint64_t m02 = 0x3333333333333333;
+  const uint64_t m04 = 0x0f0f0f0f0f0f0f0f;
+  const uint64_t m08 = 0x00ff00ff00ff00ff;
+  const uint64_t m16 = 0x0000ffff0000ffff;
+  const uint64_t m32 = 0x00000000ffffffff;
+  value = (value & m01) + ((value >> 1) & m01);
+  value = (value & m02) + ((value >> 2) & m02);
+  value = (value & m04) + ((value >> 4) & m04);
+  value = (value & m08) + ((value >> 8) & m08);
+  value = (value & m16) + ((value >> 16) & m16);
+  value = (value & m32) + ((value >> 32) & m32);
+  return (int)value;
+}
+FORCE_INLINE int POPCOUNT_32(uint32_t value) {
+  const uint64_t m01 = 0x55555555;
+  const uint64_t m02 = 0x33333333;
+  const uint64_t m04 = 0x0f0f0f0f;
+  const uint64_t m08 = 0x00ff00ff;
+  const uint64_t m16 = 0x0000ffff;
+  value = (value & m01) + ((value >> 1) & m01);
+  value = (value & m02) + ((value >> 2) & m02);
+  value = (value & m04) + ((value >> 4) & m04);
+  value = (value & m08) + ((value >> 8) & m08);
+  value = (value & m16) + ((value >> 16) & m16);
+  return (int)value;
+}
+#endif
+#else
 #define POPCOUNT_64(word64) __builtin_popcountll((word64))
 #define POPCOUNT_32(word32) __builtin_popcount((word32))
+#endif
 
 /*
  * Prefetch macros
  */
+#ifdef _MSC_VER
+#define PREFETCH(ADDR) PreFetchCacheLine(PF_TEMPORAL_LEVEL_1,ADDR)
+#else
 #define PREFETCH(ADDR) __builtin_prefetch(((const char*)ADDR))
+#endif
+
+/*
+ * Exepct
+ */
+#ifdef _MSC_VER
+#define EXPECT(A, B) (A)
+#else
+#define EXPECT(A, B) __builtin_expect(A, B)
+#endif
+
+/*
+ * Leading/Trailling Zeros Count
+ */
+#ifdef _MSC_VER
+
+FORCE_INLINE int TZCNT_32(uint32_t value) {
+  unsigned long trailing_zero = 0;
+  _BitScanForward(&trailing_zero, value);
+  return trailing_zero;
+}
+FORCE_INLINE int TZCNT_64(uint64_t value) {
+  unsigned long trailing_zero = 0;
+  _BitScanForward64(&trailing_zero, value);
+  return trailing_zero;
+}
+
+// these are available in sse4, but msvc doesn't have a
+// flag for that, so avx is the best guess
+#ifdef __AVX__
+#define LZCNT_32(value) __lzcnt(value)
+#define LZCNT_64(value) __lzcnt64(value)
+#else
+FORCE_INLINE int LZCNT_32(uint32_t value) {
+  unsigned long leading_zero = 0;
+  _BitScanReverse(&leading_zero, value);
+  return 31 - leading_zero;
+}
+FORCE_INLINE int LZCNT_64(uint64_t value) {
+  unsigned long leading_zero = 0;
+  _BitScanReverse64(&leading_zero, value);
+  return 63 - leading_zero;
+}
+#endif
+
+#else
+#define LZCNT_32(value) __builtin_clz(value)
+#define TZCNT_32(value) __builtin_ctz(value)
+#define LZCNT_64(value) __builtin_clzll(value)
+#define TZCNT_64(value) __builtin_ctzll(value)
+#endif
+
+/*
+ * Array Init
+ */
+#define AREP4(x) x, x, x, x
+#define AREP16(x) AREP4(x), AREP4(x), AREP4(x), AREP4(x)
+#define AREP64(x) AREP16(x), AREP16(x), AREP16(x), AREP16(x)
+#define ARRAY_REPEAT_256(x) AREP64(x), AREP64(x), AREP64(x), AREP64(x)
+
 
 /*
  * Display
